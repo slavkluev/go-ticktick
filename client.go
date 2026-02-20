@@ -26,7 +26,7 @@ type Client struct {
 	BaseURL string
 
 	// AccessToken is the OAuth2 bearer token.
-	AccessToken string
+	AccessToken string //nolint:gosec // G117: stores user-provided OAuth2 token, not a hardcoded secret
 }
 
 // NewClient creates a new TickTick API client with the given access token.
@@ -50,18 +50,21 @@ func (e *Error) Error() string {
 
 func (c *Client) do(req *http.Request) (*http.Response, error) {
 	req.Header.Set("Authorization", "Bearer "+c.AccessToken)
+
 	if req.Body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	resp, err := c.HTTPClient.Do(req)
+	resp, err := c.HTTPClient.Do(req) //nolint:gosec // G704: URL is constructed from client-configured BaseURL
 	if err != nil {
 		return nil, err
 	}
 
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		defer resp.Body.Close()
+
 		body, _ := io.ReadAll(resp.Body)
+
 		return nil, &Error{
 			StatusCode: resp.StatusCode,
 			Body:       string(body),
@@ -76,35 +79,46 @@ func (c *Client) get(ctx context.Context, path string, v any) error {
 	if err != nil {
 		return err
 	}
+
 	resp, err := c.do(req)
 	if err != nil {
 		return err
 	}
+
 	defer resp.Body.Close()
+
 	return json.NewDecoder(resp.Body).Decode(v)
 }
 
 func (c *Client) post(ctx context.Context, path string, body any, v any) error {
 	var reqBody io.Reader
+
 	if body != nil {
 		var buf bytes.Buffer
+
 		if err := json.NewEncoder(&buf).Encode(body); err != nil {
 			return err
 		}
+
 		reqBody = &buf
 	}
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.BaseURL+path, reqBody)
 	if err != nil {
 		return err
 	}
+
 	resp, err := c.do(req)
 	if err != nil {
 		return err
 	}
+
 	defer resp.Body.Close()
+
 	if v != nil {
 		return json.NewDecoder(resp.Body).Decode(v)
 	}
+
 	return nil
 }
 
@@ -113,10 +127,13 @@ func (c *Client) delete(ctx context.Context, path string) error {
 	if err != nil {
 		return err
 	}
+
 	resp, err := c.do(req)
 	if err != nil {
 		return err
 	}
-	resp.Body.Close()
+
+	defer resp.Body.Close()
+
 	return nil
 }
