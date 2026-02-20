@@ -82,8 +82,10 @@ func main() {
 client := ticktick.NewClient("access-token")
 
 // Customize HTTP client or base URL
-client.HTTPClient = &http.Client{Timeout: 10 * time.Second}
-client.BaseURL = "https://custom-api-url.example.com"
+client = ticktick.NewClient("access-token",
+	ticktick.WithHTTPClient(&http.Client{Timeout: 10 * time.Second}),
+	ticktick.WithBaseURL("https://custom-api-url.example.com"),
+)
 ```
 
 ### Tasks

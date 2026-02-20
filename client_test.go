@@ -12,25 +12,52 @@ import (
 
 func setupTestClient(handler http.HandlerFunc) (*ticktick.Client, *httptest.Server) {
 	server := httptest.NewServer(handler)
-	client := ticktick.NewClient("test-token")
-	client.BaseURL = server.URL
+	client := ticktick.NewClient("test-token", ticktick.WithBaseURL(server.URL))
 
 	return client, server
 }
 
 func TestNewClient(t *testing.T) {
-	client := ticktick.NewClient("my-token")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		auth := r.Header.Get("Authorization")
+		if auth != "Bearer my-token" {
+			t.Errorf("expected Bearer my-token, got %s", auth)
+		}
 
-	if client.AccessToken != "my-token" {
-		t.Errorf("expected access token my-token, got %s", client.AccessToken)
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("[]"))
+	}))
+	defer server.Close()
+
+	client := ticktick.NewClient("my-token", ticktick.WithBaseURL(server.URL))
+
+	_, err := client.GetProjects(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
 	}
+}
 
-	if client.BaseURL != ticktick.DefaultBaseURL {
-		t.Errorf("expected base URL %s, got %s", ticktick.DefaultBaseURL, client.BaseURL)
-	}
+func TestWithHTTPClient(t *testing.T) {
+	called := false
+	customClient := &http.Client{}
 
-	if client.HTTPClient != http.DefaultClient {
-		t.Error("expected http.DefaultClient")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		called = true
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("[]"))
+	}))
+	defer server.Close()
+
+	client := ticktick.NewClient("token",
+		ticktick.WithBaseURL(server.URL),
+		ticktick.WithHTTPClient(customClient),
+	)
+
+	_, _ = client.GetProjects(context.Background())
+
+	if !called {
+		t.Error("expected custom HTTP client to be used")
 	}
 }
 
