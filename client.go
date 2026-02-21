@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -88,7 +89,17 @@ func (c *Client) do(req *http.Request, v any) error {
 	}
 
 	if v != nil {
-		return json.NewDecoder(resp.Body).Decode(v)
+		decErr := json.NewDecoder(resp.Body).Decode(v)
+		if errors.Is(decErr, io.EOF) {
+			return &Error{
+				StatusCode: resp.StatusCode,
+				Body:       "empty response body",
+			}
+		}
+
+		if decErr != nil {
+			return decErr
+		}
 	}
 
 	return nil

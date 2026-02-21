@@ -129,6 +129,32 @@ func TestErrorString(t *testing.T) {
 	}
 }
 
+func TestEmptyResponseBody(t *testing.T) {
+	client, server := setupTestClient(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	defer server.Close()
+
+	_, err := client.GetTask(context.Background(), "proj1", "task1")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	var apiErr *ticktick.Error
+
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("expected *ticktick.Error, got %T: %v", err, err)
+	}
+
+	if apiErr.StatusCode != http.StatusOK {
+		t.Errorf("expected status 200, got %d", apiErr.StatusCode)
+	}
+
+	if apiErr.Body != "empty response body" {
+		t.Errorf("expected 'empty response body', got %q", apiErr.Body)
+	}
+}
+
 func TestErrorStatusBoundaries(t *testing.T) {
 	tests := []struct {
 		name      string
