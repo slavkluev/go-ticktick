@@ -1,0 +1,10 @@
+coverage:
+  range: 80...100
+
+comment:
+  require_changes: true
+
+status:
+  patch:
+    default:
+      enabled: no
