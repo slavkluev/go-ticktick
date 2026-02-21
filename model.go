@@ -2,11 +2,15 @@ package ticktick
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 )
 
-// TimeLayout is the time format used by the TickTick API.
-const TimeLayout = "2006-01-02T15:04:05-0700"
+// TickTick API time string layouts. The API also returns Unix millisecond timestamps.
+const (
+	timeLayout       = "2006-01-02T15:04:05-0700"
+	timeLayoutMillis = "2006-01-02T15:04:05.000-0700"
+)
 
 // Task priority levels.
 const (
@@ -197,15 +201,28 @@ func (t Time) MarshalJSON() ([]byte, error) {
 		return []byte(`""`), nil
 	}
 
-	return []byte(`"` + t.Format(TimeLayout) + `"`), nil
+	return []byte(`"` + t.Format(timeLayout) + `"`), nil
 }
 
-// UnmarshalJSON deserializes a Time from JSON. Empty strings and null values
-// are unmarshaled as zero time.
+// UnmarshalJSON deserializes a Time from JSON. It handles the standard TickTick
+// date string format, date strings with fractional seconds, Unix millisecond
+// timestamps (used in some checklist item fields), empty strings, and null values.
 func (t *Time) UnmarshalJSON(data []byte) error {
 	s := string(data)
 
 	if s == "null" {
+		return nil
+	}
+
+	// Unquoted number — Unix milliseconds (e.g. 1732885211000).
+	if len(s) > 0 && s[0] != '"' {
+		ms, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			return fmt.Errorf("ticktick: cannot parse time %q: %w", s, err)
+		}
+
+		t.Time = time.UnixMilli(ms)
+
 		return nil
 	}
 
@@ -219,7 +236,12 @@ func (t *Time) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	parsed, err := time.Parse(TimeLayout, s)
+	// Try with milliseconds first, then without.
+	parsed, err := time.Parse(timeLayoutMillis, s)
+	if err != nil {
+		parsed, err = time.Parse(timeLayout, s)
+	}
+
 	if err != nil {
 		return fmt.Errorf("ticktick: cannot parse time %q: %w", s, err)
 	}

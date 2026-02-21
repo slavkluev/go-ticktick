@@ -113,6 +113,41 @@ func TestTimeUnmarshalJSONNull(t *testing.T) {
 	}
 }
 
+func TestTimeUnmarshalJSONUnixMillis(t *testing.T) {
+	var tt ticktick.Time
+
+	err := json.Unmarshal([]byte(`1732885211000`), &tt)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	expected := time.UnixMilli(1732885211000)
+	if !tt.Time.Equal(expected) {
+		t.Errorf("expected %v, got %v", expected, tt.Time)
+	}
+}
+
+func TestTimeUnmarshalJSONMilliseconds(t *testing.T) {
+	var tt ticktick.Time
+
+	err := json.Unmarshal([]byte(`"2026-02-21T18:00:28.352+0000"`), &tt)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if tt.Year() != 2026 || tt.Month() != 2 || tt.Day() != 21 {
+		t.Errorf("unexpected date: %v", tt.Time)
+	}
+
+	if tt.Hour() != 18 || tt.Minute() != 0 || tt.Second() != 28 {
+		t.Errorf("unexpected time: %v", tt.Time)
+	}
+
+	if tt.Nanosecond() != 352000000 {
+		t.Errorf("expected 352ms, got %dns", tt.Nanosecond())
+	}
+}
+
 func TestNewTime(t *testing.T) {
 	tm := time.Date(2024, 1, 1, 0, 0, 0, 0, time.UTC)
 	pt := ticktick.NewTime(tm)
