@@ -10,23 +10,69 @@ go get github.com/slavkluev/go-ticktick
 
 ## Authentication
 
-The library requires an OAuth2 access token. To obtain one:
+The library requires an OAuth2 access token. TickTick uses the [Authorization Code](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1) flow.
 
-1. Register your application at the [TickTick Developer Center](https://developer.ticktick.com/manage) to get a `client_id` and `client_secret`.
+### 1. Register your application
 
-2. Redirect the user to the authorization page:
-   ```
-   https://ticktick.com/oauth/authorize?scope=tasks:write%20tasks:read&client_id=YOUR_CLIENT_ID&state=STATE&redirect_uri=YOUR_REDIRECT_URI&response_type=code
-   ```
+1. Open the [TickTick Developer Center](https://developer.ticktick.com/manage) and sign in.
+2. Click **New App**, fill in **Name** (e.g. "My App") and click **Add**.
+3. Click **Edit** on your app to open **App Setting**.
+4. Copy your **Client ID** and **Client Secret**.
+5. Set the **OAuth redirect URL** to a URL your app will listen on (e.g. `http://localhost:8080/callback`) and click **Save**.
 
-3. After the user grants access, TickTick redirects back to your `redirect_uri` with a `code` parameter.
+### 2. Redirect user to authorization page
 
-4. Exchange the code for an access token by making a POST request to `https://ticktick.com/oauth/token` with Basic Auth (`client_id` as username, `client_secret` as password) and form body:
-   ```
-   code=AUTHORIZATION_CODE&grant_type=authorization_code&scope=tasks:write%20tasks:read&redirect_uri=YOUR_REDIRECT_URI
-   ```
+Build the authorization URL and redirect the user:
 
-   The response contains the `access_token`.
+```
+https://ticktick.com/oauth/authorize?client_id=YOUR_CLIENT_ID&scope=tasks:write%20tasks:read&redirect_uri=YOUR_REDIRECT_URI&response_type=code
+```
+
+| Parameter       | Description                                                                                  |
+|-----------------|----------------------------------------------------------------------------------------------|
+| `client_id`     | Your application ID                                                                          |
+| `scope`         | `tasks:read` for read access, `tasks:write` for write access (both cover tasks and projects) |
+| `state`         | Any value, passed back to redirect URL as-is (optional)                                      |
+| `redirect_uri`  | Your registered redirect URL                                                                 |
+| `response_type` | Must be `code`                                                                               |
+
+### 3. Receive the authorization code
+
+After the user grants access, TickTick redirects to your `redirect_uri` with query parameters:
+
+| Parameter | Description                                      |
+|-----------|--------------------------------------------------|
+| `code`    | Authorization code to exchange for a token       |
+| `state`   | The same `state` value from step 2 (if provided) |
+
+### 4. Exchange code for access token
+
+Exchange the authorization code for an access token:
+
+```bash
+curl -X POST https://ticktick.com/oauth/token \
+  -u "YOUR_CLIENT_ID:YOUR_CLIENT_SECRET" \
+  -d "code=AUTHORIZATION_CODE&grant_type=authorization_code&scope=tasks:write%20tasks:read&redirect_uri=YOUR_REDIRECT_URI"
+```
+
+The response JSON contains the `access_token`:
+
+```json
+{
+  "access_token": "your-access-token",
+  "token_type": "bearer",
+  "expires_in": 15551999,
+  "scope": "tasks:read tasks:write"
+}
+```
+
+### 5. Use the token
+
+Pass the token when creating the client:
+
+```go
+client := ticktick.NewClient("your-access-token")
+```
 
 ## Usage
 
@@ -123,6 +169,45 @@ if err != nil {
 		fmt.Printf("HTTP %d: %s\n", apiErr.StatusCode, apiErr.Body)
 	}
 }
+```
+
+### Constants
+
+The library provides constants for common field values:
+
+```go
+// Task priority
+ticktick.PriorityNone      // 0
+ticktick.PriorityLow       // 1
+ticktick.PriorityMedium    // 3
+ticktick.PriorityHigh      // 5
+
+// Task status
+ticktick.TaskStatusNormal       // 0
+ticktick.TaskStatusCompleted    // 2
+
+// Checklist item status
+ticktick.ChecklistStatusNormal       // 0
+ticktick.ChecklistStatusCompleted    // 1
+
+// Project view mode
+ticktick.ViewModeList       // "list"
+ticktick.ViewModeKanban     // "kanban"
+ticktick.ViewModeTimeline   // "timeline"
+
+// Project kind
+ticktick.ProjectKindTask    // "TASK"
+ticktick.ProjectKindNote    // "NOTE"
+
+// Task kind
+ticktick.TaskKindText       // "TEXT"
+ticktick.TaskKindNote       // "NOTE"
+ticktick.TaskKindChecklist  // "CHECKLIST"
+
+// Project permission
+ticktick.PermissionRead     // "read"
+ticktick.PermissionWrite    // "write"
+ticktick.PermissionComment  // "comment"
 ```
 
 ## License
