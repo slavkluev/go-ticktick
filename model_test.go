@@ -125,3 +125,47 @@ func TestNewTime(t *testing.T) {
 		t.Errorf("expected %v, got %v", tm, pt.Time)
 	}
 }
+
+func TestStringHelper(t *testing.T) {
+	p := ticktick.String("hello")
+	if p == nil {
+		t.Fatal("expected non-nil pointer")
+	}
+
+	if *p != "hello" {
+		t.Errorf("expected hello, got %s", *p)
+	}
+}
+
+func TestIntHelper(t *testing.T) {
+	p := ticktick.Int(42)
+	if p == nil {
+		t.Fatal("expected non-nil pointer")
+	}
+
+	if *p != 42 {
+		t.Errorf("expected 42, got %d", *p)
+	}
+}
+
+func TestInt64Helper(t *testing.T) {
+	p := ticktick.Int64(123456789)
+	if p == nil {
+		t.Fatal("expected non-nil pointer")
+	}
+
+	if *p != 123456789 {
+		t.Errorf("expected 123456789, got %d", *p)
+	}
+}
+
+func TestBoolHelper(t *testing.T) {
+	p := ticktick.Bool(true)
+	if p == nil {
+		t.Fatal("expected non-nil pointer")
+	}
+
+	if *p != true {
+		t.Errorf("expected true, got %v", *p)
+	}
+}

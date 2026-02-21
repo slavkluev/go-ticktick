@@ -125,14 +125,32 @@ func TestCreateProject(t *testing.T) {
 			t.Errorf("expected name New Project, got %s", req.Name)
 		}
 
+		if req.Color == nil || *req.Color != "#F18181" {
+			t.Errorf("expected color #F18181, got %v", req.Color)
+		}
+
+		if req.SortOrder == nil || *req.SortOrder != 100 {
+			t.Errorf("expected sortOrder 100, got %v", req.SortOrder)
+		}
+
+		if req.ViewMode == nil || *req.ViewMode != "list" {
+			t.Errorf("expected viewMode list, got %v", req.ViewMode)
+		}
+
+		if req.Kind == nil || *req.Kind != "TASK" {
+			t.Errorf("expected kind TASK, got %v", req.Kind)
+		}
+
 		json.NewEncoder(w).Encode(ticktick.Project{ID: "proj-new", Name: "New Project"})
 	})
 	defer server.Close()
 
 	project, err := client.CreateProject(context.Background(), &ticktick.CreateProjectRequest{
-		Name:     "New Project",
-		Color:    ticktick.String("#F18181"),
-		ViewMode: ticktick.String("list"),
+		Name:      "New Project",
+		Color:     ticktick.String("#F18181"),
+		SortOrder: ticktick.Int64(100),
+		ViewMode:  ticktick.String("list"),
+		Kind:      ticktick.String("TASK"),
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -163,12 +181,32 @@ func TestUpdateProject(t *testing.T) {
 			t.Errorf("expected name Updated, got %v", req.Name)
 		}
 
+		if req.Color == nil || *req.Color != "#00FF00" {
+			t.Errorf("expected color #00FF00, got %v", req.Color)
+		}
+
+		if req.SortOrder == nil || *req.SortOrder != 200 {
+			t.Errorf("expected sortOrder 200, got %v", req.SortOrder)
+		}
+
+		if req.ViewMode == nil || *req.ViewMode != "kanban" {
+			t.Errorf("expected viewMode kanban, got %v", req.ViewMode)
+		}
+
+		if req.Kind == nil || *req.Kind != "NOTE" {
+			t.Errorf("expected kind NOTE, got %v", req.Kind)
+		}
+
 		json.NewEncoder(w).Encode(ticktick.Project{ID: "proj1", Name: "Updated"})
 	})
 	defer server.Close()
 
 	project, err := client.UpdateProject(context.Background(), "proj1", &ticktick.UpdateProjectRequest{
-		Name: ticktick.String("Updated"),
+		Name:      ticktick.String("Updated"),
+		Color:     ticktick.String("#00FF00"),
+		SortOrder: ticktick.Int64(200),
+		ViewMode:  ticktick.String("kanban"),
+		Kind:      ticktick.String("NOTE"),
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -196,6 +234,81 @@ func TestDeleteProject(t *testing.T) {
 	err := client.DeleteProject(context.Background(), "proj1")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestCreateProjectOmitEmpty(t *testing.T) {
+	client, server := setupTestClient(func(w http.ResponseWriter, r *http.Request) {
+		var raw map[string]any
+
+		if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
+
+		if raw["name"] != "Minimal" {
+			t.Errorf("expected name Minimal, got %v", raw["name"])
+		}
+
+		for _, key := range []string{"color", "sortOrder", "viewMode", "kind"} {
+			if _, ok := raw[key]; ok {
+				t.Errorf("expected key %q to be omitted, but it was present", key)
+			}
+		}
+
+		json.NewEncoder(w).Encode(ticktick.Project{ID: "p1", Name: "Minimal"})
+	})
+	defer server.Close()
+
+	_, err := client.CreateProject(context.Background(), &ticktick.CreateProjectRequest{
+		Name: "Minimal",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestUpdateProjectOmitEmpty(t *testing.T) {
+	client, server := setupTestClient(func(w http.ResponseWriter, r *http.Request) {
+		var raw map[string]any
+
+		if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
+
+		for _, key := range []string{"name", "color", "sortOrder", "viewMode", "kind"} {
+			if _, ok := raw[key]; ok {
+				t.Errorf("expected key %q to be omitted, but it was present", key)
+			}
+		}
+
+		json.NewEncoder(w).Encode(ticktick.Project{ID: "proj1", Name: "Unchanged"})
+	})
+	defer server.Close()
+
+	_, err := client.UpdateProject(context.Background(), "proj1", &ticktick.UpdateProjectRequest{})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestGetProjectPathEscaping(t *testing.T) {
+	client, server := setupTestClient(func(w http.ResponseWriter, r *http.Request) {
+		expected := "/open/v1/project/proj%2F1"
+		if r.URL.RawPath != expected {
+			t.Errorf("expected raw path %s, got %s", expected, r.URL.RawPath)
+		}
+
+		json.NewEncoder(w).Encode(ticktick.Project{ID: "proj/1", Name: "Project"})
+	})
+	defer server.Close()
+
+	project, err := client.GetProject(context.Background(), "proj/1")
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if project.ID != "proj/1" {
+		t.Errorf("expected project ID proj/1, got %s", project.ID)
 	}
 }
 
