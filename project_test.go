@@ -149,8 +149,8 @@ func TestCreateProject(t *testing.T) {
 		Name:      "New Project",
 		Color:     ticktick.String("#F18181"),
 		SortOrder: ticktick.Int64(100),
-		ViewMode:  ticktick.String("list"),
-		Kind:      ticktick.String("TASK"),
+		ViewMode:  ticktick.String(ticktick.ViewModeList),
+		Kind:      ticktick.String(ticktick.ProjectKindTask),
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
@@ -205,8 +205,8 @@ func TestUpdateProject(t *testing.T) {
 		Name:      ticktick.String("Updated"),
 		Color:     ticktick.String("#00FF00"),
 		SortOrder: ticktick.Int64(200),
-		ViewMode:  ticktick.String("kanban"),
-		Kind:      ticktick.String("NOTE"),
+		ViewMode:  ticktick.String(ticktick.ViewModeKanban),
+		Kind:      ticktick.String(ticktick.ProjectKindNote),
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)

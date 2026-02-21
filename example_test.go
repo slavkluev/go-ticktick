@@ -122,8 +122,8 @@ func ExampleClient_CreateProject() {
 	project, err := client.CreateProject(context.Background(), &ticktick.CreateProjectRequest{
 		Name:     "Work Tasks",
 		Color:    ticktick.String("#F18181"),
-		ViewMode: ticktick.String("list"),
-		Kind:     ticktick.String("TASK"),
+		ViewMode: ticktick.String(ticktick.ViewModeList),
+		Kind:     ticktick.String(ticktick.ProjectKindTask),
 	})
 	if err != nil {
 		// handle error

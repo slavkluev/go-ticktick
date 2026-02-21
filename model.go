@@ -28,6 +28,33 @@ const (
 	ChecklistStatusCompleted = 1
 )
 
+// Project view modes.
+const (
+	ViewModeList     = "list"
+	ViewModeKanban   = "kanban"
+	ViewModeTimeline = "timeline"
+)
+
+// Project kinds.
+const (
+	ProjectKindTask = "TASK"
+	ProjectKindNote = "NOTE"
+)
+
+// Task kinds.
+const (
+	TaskKindText      = "TEXT"
+	TaskKindNote      = "NOTE"
+	TaskKindChecklist = "CHECKLIST"
+)
+
+// Project permission levels.
+const (
+	PermissionRead    = "read"
+	PermissionWrite   = "write"
+	PermissionComment = "comment"
+)
+
 // Task represents a TickTick task.
 type Task struct {
 	ID            string          `json:"id"`
