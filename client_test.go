@@ -54,7 +54,10 @@ func TestWithHTTPClient(t *testing.T) {
 		ticktick.WithHTTPClient(customClient),
 	)
 
-	_, _ = client.GetProjects(context.Background())
+	_, err := client.GetProjects(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 
 	if !called {
 		t.Error("expected custom HTTP client to be used")
@@ -73,7 +76,10 @@ func TestAuthorizationHeader(t *testing.T) {
 	})
 	defer server.Close()
 
-	_, _ = client.GetProjects(context.Background())
+	_, err := client.GetProjects(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
 }
 
 func TestErrorResponse(t *testing.T) {

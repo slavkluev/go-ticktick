@@ -3,6 +3,7 @@ package ticktick_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -53,7 +54,9 @@ func TestCreateTask(t *testing.T) {
 
 		var req ticktick.CreateTaskRequest
 
-		json.NewDecoder(r.Body).Decode(&req)
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
 
 		if req.Title != "New Task" {
 			t.Errorf("expected title New Task, got %s", req.Title)
@@ -93,7 +96,9 @@ func TestUpdateTask(t *testing.T) {
 
 		var req ticktick.UpdateTaskRequest
 
-		json.NewDecoder(r.Body).Decode(&req)
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
 
 		if req.ID != "task1" {
 			t.Errorf("expected id task1, got %s", req.ID)
@@ -154,5 +159,32 @@ func TestDeleteTask(t *testing.T) {
 	err := client.DeleteTask(context.Background(), "proj1", "task1")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestGetTaskError(t *testing.T) {
+	client, server := setupTestClient(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("task not found"))
+	})
+	defer server.Close()
+
+	_, err := client.GetTask(context.Background(), "proj1", "task1")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	var apiErr *ticktick.Error
+
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("expected *ticktick.Error, got %T", err)
+	}
+
+	if apiErr.StatusCode != http.StatusNotFound {
+		t.Errorf("expected status 404, got %d", apiErr.StatusCode)
+	}
+
+	if apiErr.Body != "task not found" {
+		t.Errorf("expected body \"task not found\", got %s", apiErr.Body)
 	}
 }

@@ -3,6 +3,7 @@ package ticktick_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"testing"
 
@@ -116,7 +117,9 @@ func TestCreateProject(t *testing.T) {
 
 		var req ticktick.CreateProjectRequest
 
-		json.NewDecoder(r.Body).Decode(&req)
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
 
 		if req.Name != "New Project" {
 			t.Errorf("expected name New Project, got %s", req.Name)
@@ -152,7 +155,9 @@ func TestUpdateProject(t *testing.T) {
 
 		var req ticktick.UpdateProjectRequest
 
-		json.NewDecoder(r.Body).Decode(&req)
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
 
 		if req.Name == nil || *req.Name != "Updated" {
 			t.Errorf("expected name Updated, got %v", req.Name)
@@ -191,5 +196,32 @@ func TestDeleteProject(t *testing.T) {
 	err := client.DeleteProject(context.Background(), "proj1")
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestGetProjectError(t *testing.T) {
+	client, server := setupTestClient(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusNotFound)
+		w.Write([]byte("project not found"))
+	})
+	defer server.Close()
+
+	_, err := client.GetProject(context.Background(), "proj1")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	var apiErr *ticktick.Error
+
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("expected *ticktick.Error, got %T", err)
+	}
+
+	if apiErr.StatusCode != http.StatusNotFound {
+		t.Errorf("expected status 404, got %d", apiErr.StatusCode)
+	}
+
+	if apiErr.Body != "project not found" {
+		t.Errorf("expected body \"project not found\", got %s", apiErr.Body)
 	}
 }

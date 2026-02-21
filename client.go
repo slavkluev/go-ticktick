@@ -9,13 +9,8 @@ import (
 	"net/http"
 )
 
-const (
-	// DefaultBaseURL is the default base URL of the TickTick API.
-	DefaultBaseURL = "https://api.ticktick.com"
-
-	// TimeLayout is the time format used by the TickTick API.
-	TimeLayout = "2006-01-02T15:04:05-0700"
-)
+// DefaultBaseURL is the default base URL of the TickTick API.
+const DefaultBaseURL = "https://api.ticktick.com"
 
 // Client manages communication with the TickTick Open API.
 type Client struct {
@@ -66,7 +61,7 @@ func (e *Error) Error() string {
 	return fmt.Sprintf("ticktick: HTTP %d: %s", e.StatusCode, e.Body)
 }
 
-func (c *Client) do(req *http.Request) (*http.Response, error) {
+func (c *Client) do(req *http.Request, v any) error {
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	if req.Body != nil {
@@ -75,21 +70,28 @@ func (c *Client) do(req *http.Request) (*http.Response, error) {
 
 	resp, err := c.httpClient.Do(req) //nolint:gosec // G704: URL is constructed from client-configured baseURL
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		defer resp.Body.Close()
+	defer func() {
+		_, _ = io.Copy(io.Discard, resp.Body)
+		_ = resp.Body.Close()
+	}()
 
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		body, _ := io.ReadAll(resp.Body)
 
-		return nil, &Error{
+		return &Error{
 			StatusCode: resp.StatusCode,
 			Body:       string(body),
 		}
 	}
 
-	return resp, nil
+	if v != nil {
+		return json.NewDecoder(resp.Body).Decode(v)
+	}
+
+	return nil
 }
 
 func (c *Client) get(ctx context.Context, path string, v any) error {
@@ -98,14 +100,7 @@ func (c *Client) get(ctx context.Context, path string, v any) error {
 		return err
 	}
 
-	resp, err := c.do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	return json.NewDecoder(resp.Body).Decode(v)
+	return c.do(req, v)
 }
 
 func (c *Client) post(ctx context.Context, path string, body any, v any) error {
@@ -126,18 +121,7 @@ func (c *Client) post(ctx context.Context, path string, body any, v any) error {
 		return err
 	}
 
-	resp, err := c.do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	if v != nil {
-		return json.NewDecoder(resp.Body).Decode(v)
-	}
-
-	return nil
+	return c.do(req, v)
 }
 
 func (c *Client) delete(ctx context.Context, path string) error {
@@ -146,12 +130,5 @@ func (c *Client) delete(ctx context.Context, path string) error {
 		return err
 	}
 
-	resp, err := c.do(req)
-	if err != nil {
-		return err
-	}
-
-	defer resp.Body.Close()
-
-	return nil
+	return c.do(req, nil)
 }

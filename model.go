@@ -1,21 +1,49 @@
 package ticktick
 
+import (
+	"fmt"
+	"time"
+)
+
+// TimeLayout is the time format used by the TickTick API.
+const TimeLayout = "2006-01-02T15:04:05-0700"
+
+// Task priority levels.
+const (
+	PriorityNone   = 0
+	PriorityLow    = 1
+	PriorityMedium = 3
+	PriorityHigh   = 5
+)
+
+// Task completion status values.
+const (
+	TaskStatusNormal    = 0
+	TaskStatusCompleted = 2
+)
+
+// ChecklistItem completion status values.
+const (
+	ChecklistStatusNormal    = 0
+	ChecklistStatusCompleted = 1
+)
+
 // Task represents a TickTick task.
 type Task struct {
 	ID            string          `json:"id"`
 	ProjectID     string          `json:"projectId"`
 	Title         string          `json:"title"`
 	IsAllDay      bool            `json:"isAllDay"`
-	CompletedTime string          `json:"completedTime"`
+	CompletedTime Time            `json:"completedTime"`
 	Content       string          `json:"content"`
 	Desc          string          `json:"desc"`
-	DueDate       string          `json:"dueDate"`
+	DueDate       Time            `json:"dueDate"`
 	Items         []ChecklistItem `json:"items"`
 	Priority      int             `json:"priority"`
 	Reminders     []string        `json:"reminders"`
 	RepeatFlag    string          `json:"repeatFlag"`
 	SortOrder     int64           `json:"sortOrder"`
-	StartDate     string          `json:"startDate"`
+	StartDate     Time            `json:"startDate"`
 	Status        int             `json:"status"`
 	TimeZone      string          `json:"timeZone"`
 	Kind          string          `json:"kind"`
@@ -26,10 +54,10 @@ type ChecklistItem struct {
 	ID            string `json:"id"`
 	Title         string `json:"title"`
 	Status        int    `json:"status"`
-	CompletedTime string `json:"completedTime"`
+	CompletedTime Time   `json:"completedTime"`
 	IsAllDay      bool   `json:"isAllDay"`
 	SortOrder     int64  `json:"sortOrder"`
-	StartDate     string `json:"startDate"`
+	StartDate     Time   `json:"startDate"`
 	TimeZone      string `json:"timeZone"`
 }
 
@@ -68,8 +96,8 @@ type CreateTaskRequest struct {
 	Content    *string                      `json:"content,omitempty"`
 	Desc       *string                      `json:"desc,omitempty"`
 	IsAllDay   *bool                        `json:"isAllDay,omitempty"`
-	StartDate  *string                      `json:"startDate,omitempty"`
-	DueDate    *string                      `json:"dueDate,omitempty"`
+	StartDate  *Time                        `json:"startDate,omitempty"`
+	DueDate    *Time                        `json:"dueDate,omitempty"`
 	TimeZone   *string                      `json:"timeZone,omitempty"`
 	Reminders  []string                     `json:"reminders,omitempty"`
 	RepeatFlag *string                      `json:"repeatFlag,omitempty"`
@@ -86,8 +114,8 @@ type UpdateTaskRequest struct {
 	Content    *string                      `json:"content,omitempty"`
 	Desc       *string                      `json:"desc,omitempty"`
 	IsAllDay   *bool                        `json:"isAllDay,omitempty"`
-	StartDate  *string                      `json:"startDate,omitempty"`
-	DueDate    *string                      `json:"dueDate,omitempty"`
+	StartDate  *Time                        `json:"startDate,omitempty"`
+	DueDate    *Time                        `json:"dueDate,omitempty"`
 	TimeZone   *string                      `json:"timeZone,omitempty"`
 	Reminders  []string                     `json:"reminders,omitempty"`
 	RepeatFlag *string                      `json:"repeatFlag,omitempty"`
@@ -99,12 +127,12 @@ type UpdateTaskRequest struct {
 // CreateChecklistItemRequest contains the fields for a subtask in a create or update request.
 type CreateChecklistItemRequest struct {
 	Title         string  `json:"title"`
-	StartDate     *string `json:"startDate,omitempty"`
+	StartDate     *Time   `json:"startDate,omitempty"`
 	IsAllDay      *bool   `json:"isAllDay,omitempty"`
 	SortOrder     *int64  `json:"sortOrder,omitempty"`
 	TimeZone      *string `json:"timeZone,omitempty"`
 	Status        *int    `json:"status,omitempty"`
-	CompletedTime *string `json:"completedTime,omitempty"`
+	CompletedTime *Time   `json:"completedTime,omitempty"`
 }
 
 // CreateProjectRequest contains the fields for creating a new project.
@@ -123,6 +151,55 @@ type UpdateProjectRequest struct {
 	SortOrder *int64  `json:"sortOrder,omitempty"`
 	ViewMode  *string `json:"viewMode,omitempty"`
 	Kind      *string `json:"kind,omitempty"`
+}
+
+// Time wraps [time.Time] with custom JSON marshaling for the TickTick API date format.
+type Time struct {
+	time.Time
+}
+
+// NewTime creates a pointer to a Time value. Useful for optional date fields in request types.
+func NewTime(t time.Time) *Time {
+	return &Time{Time: t}
+}
+
+// MarshalJSON serializes a Time to JSON using the TickTick date format.
+// A zero Time marshals to an empty string.
+func (t Time) MarshalJSON() ([]byte, error) {
+	if t.IsZero() {
+		return []byte(`""`), nil
+	}
+
+	return []byte(`"` + t.Format(TimeLayout) + `"`), nil
+}
+
+// UnmarshalJSON deserializes a Time from JSON. Empty strings and null values
+// are unmarshaled as zero time.
+func (t *Time) UnmarshalJSON(data []byte) error {
+	s := string(data)
+
+	if s == "null" {
+		return nil
+	}
+
+	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
+		s = s[1 : len(s)-1]
+	}
+
+	if s == "" {
+		t.Time = time.Time{}
+
+		return nil
+	}
+
+	parsed, err := time.Parse(TimeLayout, s)
+	if err != nil {
+		return fmt.Errorf("ticktick: cannot parse time %q: %w", s, err)
+	}
+
+	t.Time = parsed
+
+	return nil
 }
 
 // String returns a pointer to the given string value.

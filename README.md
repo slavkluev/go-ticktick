@@ -58,7 +58,7 @@ func main() {
 	task, err := client.CreateTask(ctx, &ticktick.CreateTaskRequest{
 		Title:     "Buy groceries",
 		ProjectID: projects[0].ID,
-		Priority:  ticktick.Int(3),
+		Priority:  ticktick.Int(ticktick.PriorityMedium),
 		IsAllDay:  ticktick.Bool(true),
 	})
 	if err != nil {
