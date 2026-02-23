@@ -362,6 +362,92 @@ func TestUpdateTaskOmitEmpty(t *testing.T) {
 	}
 }
 
+func TestCreateTaskEmptySlices(t *testing.T) {
+	client, server := setupTestClient(func(w http.ResponseWriter, r *http.Request) {
+		var raw map[string]any
+
+		if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
+
+		items, ok := raw["items"]
+		if !ok {
+			t.Fatal("expected key \"items\" to be present, but it was omitted")
+		}
+
+		arr, ok := items.([]any)
+		if !ok || len(arr) != 0 {
+			t.Errorf("expected empty array for items, got %v", items)
+		}
+
+		reminders, ok := raw["reminders"]
+		if !ok {
+			t.Fatal("expected key \"reminders\" to be present, but it was omitted")
+		}
+
+		arr, ok = reminders.([]any)
+		if !ok || len(arr) != 0 {
+			t.Errorf("expected empty array for reminders, got %v", reminders)
+		}
+
+		json.NewEncoder(w).Encode(ticktick.Task{ID: "t1", Title: "Test"})
+	})
+	defer server.Close()
+
+	_, err := client.CreateTask(context.Background(), &ticktick.CreateTaskRequest{
+		Title:     "Test",
+		ProjectID: "proj1",
+		Items:     []ticktick.CreateChecklistItemRequest{},
+		Reminders: []string{},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestUpdateTaskEmptySlices(t *testing.T) {
+	client, server := setupTestClient(func(w http.ResponseWriter, r *http.Request) {
+		var raw map[string]any
+
+		if err := json.NewDecoder(r.Body).Decode(&raw); err != nil {
+			t.Fatalf("failed to decode request body: %v", err)
+		}
+
+		items, ok := raw["items"]
+		if !ok {
+			t.Fatal("expected key \"items\" to be present, but it was omitted")
+		}
+
+		arr, ok := items.([]any)
+		if !ok || len(arr) != 0 {
+			t.Errorf("expected empty array for items, got %v", items)
+		}
+
+		reminders, ok := raw["reminders"]
+		if !ok {
+			t.Fatal("expected key \"reminders\" to be present, but it was omitted")
+		}
+
+		arr, ok = reminders.([]any)
+		if !ok || len(arr) != 0 {
+			t.Errorf("expected empty array for reminders, got %v", reminders)
+		}
+
+		json.NewEncoder(w).Encode(ticktick.Task{ID: "task1"})
+	})
+	defer server.Close()
+
+	_, err := client.UpdateTask(context.Background(), "task1", &ticktick.UpdateTaskRequest{
+		ID:        "task1",
+		ProjectID: "proj1",
+		Items:     []ticktick.CreateChecklistItemRequest{},
+		Reminders: []string{},
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
 func TestGetTaskPathEscaping(t *testing.T) {
 	client, server := setupTestClient(func(w http.ResponseWriter, r *http.Request) {
 		expected := "/open/v1/project/proj%2F1/task/task%3F2"

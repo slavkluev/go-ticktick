@@ -130,11 +130,11 @@ type CreateTaskRequest struct {
 	StartDate  *Time                        `json:"startDate,omitempty"`
 	DueDate    *Time                        `json:"dueDate,omitempty"`
 	TimeZone   *string                      `json:"timeZone,omitempty"`
-	Reminders  []string                     `json:"reminders,omitempty"`
+	Reminders  []string                     `json:"reminders,omitzero"`
 	RepeatFlag *string                      `json:"repeatFlag,omitempty"`
 	Priority   *int                         `json:"priority,omitempty"`
 	SortOrder  *int64                       `json:"sortOrder,omitempty"`
-	Items      []CreateChecklistItemRequest `json:"items,omitempty"`
+	Items      []CreateChecklistItemRequest `json:"items,omitzero"`
 }
 
 // UpdateTaskRequest contains the fields for updating an existing task.
@@ -148,11 +148,11 @@ type UpdateTaskRequest struct {
 	StartDate  *Time                        `json:"startDate,omitempty"`
 	DueDate    *Time                        `json:"dueDate,omitempty"`
 	TimeZone   *string                      `json:"timeZone,omitempty"`
-	Reminders  []string                     `json:"reminders,omitempty"`
+	Reminders  []string                     `json:"reminders,omitzero"`
 	RepeatFlag *string                      `json:"repeatFlag,omitempty"`
 	Priority   *int                         `json:"priority,omitempty"`
 	SortOrder  *int64                       `json:"sortOrder,omitempty"`
-	Items      []CreateChecklistItemRequest `json:"items,omitempty"`
+	Items      []CreateChecklistItemRequest `json:"items,omitzero"`
 }
 
 // CreateChecklistItemRequest contains the fields for a subtask in a create or update request.
