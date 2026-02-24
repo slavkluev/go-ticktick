@@ -90,6 +90,8 @@ func (c *Client) do(req *http.Request, v any) error {
 
 	if v != nil {
 		decErr := json.NewDecoder(resp.Body).Decode(v)
+		// The TickTick API may return 200 with an empty body for non-existent
+		// resources instead of 404, so treat EOF as an API error.
 		if errors.Is(decErr, io.EOF) {
 			return &Error{
 				StatusCode: resp.StatusCode,
@@ -98,7 +100,7 @@ func (c *Client) do(req *http.Request, v any) error {
 		}
 
 		if decErr != nil {
-			return decErr
+			return fmt.Errorf("ticktick: decode response: %w", decErr)
 		}
 	}
 

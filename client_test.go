@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/slavkluev/go-ticktick"
@@ -201,5 +202,38 @@ func TestErrorStatusBoundaries(t *testing.T) {
 				t.Errorf("expected status %d, got %d", tt.status, apiErr.StatusCode)
 			}
 		})
+	}
+}
+
+func TestInvalidJSONResponse(t *testing.T) {
+	client, server := setupTestClient(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("<html>not json</html>"))
+	})
+	defer server.Close()
+
+	_, err := client.GetTask(context.Background(), "proj1", "task1")
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+
+	if !strings.Contains(err.Error(), "ticktick: decode response:") {
+		t.Errorf("expected wrapped decode error, got %q", err.Error())
+	}
+}
+
+func TestCancelledContext(t *testing.T) {
+	client, server := setupTestClient(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("[]"))
+	})
+	defer server.Close()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	_, err := client.GetProjects(ctx)
+	if err == nil {
+		t.Fatal("expected error, got nil")
 	}
 }
