@@ -15,6 +15,18 @@ Go client library for the [TickTick Open API](https://developer.ticktick.com/man
 go get github.com/slavkluev/go-ticktick
 ```
 
+## Limitations
+
+This library uses only the official TickTick Open API (V1). The unofficial V2 web API is not supported.
+
+The V1 API does not provide access to:
+- **Inbox** — not exposed as a project, so tasks in it cannot be read or listed
+- **Tags**
+- **Habits and focus tracking**
+- **Folders**
+- **Completed tasks**
+- **Filters / Smart lists**
+
 ## Authentication
 
 The library requires an OAuth2 access token. TickTick uses the [Authorization Code](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1) flow.
@@ -137,7 +149,7 @@ client := ticktick.NewClient("access-token")
 // Customize HTTP client or base URL
 client = ticktick.NewClient("access-token",
 	ticktick.WithHTTPClient(&http.Client{Timeout: 10 * time.Second}),
-	ticktick.WithBaseURL("https://custom-api-url.example.com"),
+	ticktick.WithBaseURL("https://api.dida365.com"),
 )
 ```
 
