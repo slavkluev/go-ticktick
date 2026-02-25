@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/slavkluev/go-ticktick"
+	"github.com/slavkluev/go-ticktick/v1"
 )
 
 func ExampleNewClient() {

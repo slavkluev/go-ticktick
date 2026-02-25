@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/slavkluev/go-ticktick"
+	"github.com/slavkluev/go-ticktick/v1"
 )
 
 func TestGetProjects(t *testing.T) {

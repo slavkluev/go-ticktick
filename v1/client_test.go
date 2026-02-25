@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/slavkluev/go-ticktick"
+	"github.com/slavkluev/go-ticktick/v1"
 )
 
 type roundTripFunc func(*http.Request) (*http.Response, error)

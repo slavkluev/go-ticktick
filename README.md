@@ -3,7 +3,7 @@
 [![CI](https://github.com/slavkluev/go-ticktick/actions/workflows/ci.yml/badge.svg)](https://github.com/slavkluev/go-ticktick/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/slavkluev/go-ticktick/graph/badge.svg)](https://codecov.io/gh/slavkluev/go-ticktick)
 [![Go Report Card](https://goreportcard.com/badge/github.com/slavkluev/go-ticktick)](https://goreportcard.com/report/github.com/slavkluev/go-ticktick)
-[![Go Reference](https://pkg.go.dev/badge/github.com/slavkluev/go-ticktick.svg)](https://pkg.go.dev/github.com/slavkluev/go-ticktick)
+[![Go Reference](https://pkg.go.dev/badge/github.com/slavkluev/go-ticktick/v1.svg)](https://pkg.go.dev/github.com/slavkluev/go-ticktick/v1)
 [![Release](https://img.shields.io/github/v/release/slavkluev/go-ticktick.svg)](https://github.com/slavkluev/go-ticktick/releases/)
 [![License](https://img.shields.io/badge/License-MIT-success)](https://github.com/slavkluev/go-ticktick/blob/main/LICENSE)
 
@@ -12,7 +12,7 @@ Go client library for the [TickTick Open API](https://developer.ticktick.com/man
 ## Installation
 
 ```bash
-go get github.com/slavkluev/go-ticktick
+go get github.com/slavkluev/go-ticktick/v1
 ```
 
 ## Limitations
@@ -103,7 +103,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/slavkluev/go-ticktick"
+	"github.com/slavkluev/go-ticktick/v1"
 )
 
 func main() {

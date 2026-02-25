@@ -4,11 +4,11 @@
 // license that can be found in the LICENSE file.
 
 /*
-Package ticktick provides a Go client for the TickTick Open API.
+Package ticktick provides a Go client for the TickTick Open API (V1).
 
 # Usage
 
-	import "github.com/slavkluev/go-ticktick"
+	import "github.com/slavkluev/go-ticktick/v1"
 
 Construct a new client with an OAuth2 access token, then call methods
 to access the TickTick API. For example:

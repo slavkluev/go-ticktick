@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/slavkluev/go-ticktick"
+	"github.com/slavkluev/go-ticktick/v1"
 )
 
 func TestPriorityConstants(t *testing.T) {
